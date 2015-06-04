@@ -34,4 +34,7 @@ import Foundation
     func engineDidClose(reason:String)
     func parseSocketMessage(msg:String)
     func parseBinaryData(data:NSData)
+    
+    func handleHttpRequest(request:NSURLRequest)
+    func handleHttpResponse(response:NSURLResponse)
 }

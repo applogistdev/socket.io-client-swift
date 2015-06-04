@@ -44,6 +44,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient, SocketLogClient
     var log = false
     var waitingData = ContiguousArray<SocketPacket>()
     var sessionDelegate:NSURLSessionDelegate?
+    var clientDelegate:SocketIOClientDelegate?
     
     public let socketURL:String
     public let handleAckQueue = dispatch_queue_create("handleAckQueue", DISPATCH_QUEUE_SERIAL)
@@ -120,6 +121,10 @@ public final class SocketIOClient: NSObject, SocketEngineClient, SocketLogClient
         
         if let reconnectWait = opts?["reconnectWait"] as? Int {
             self.reconnectWait = abs(reconnectWait)
+        }
+        
+        if let clientDelegate = opts?["clientDelegate"] as? SocketIOClientDelegate {
+            self.clientDelegate = clientDelegate
         }
         
         super.init()
@@ -507,5 +512,13 @@ public final class SocketIOClient: NSObject, SocketEngineClient, SocketLogClient
         
         currentReconnectAttempt++
         connect()
+    }
+    
+    public func handleHttpRequest(request: NSURLRequest) {
+        clientDelegate?.handleHttpRequest(request)
+    }
+    
+    public func handleHttpResponse(response: NSURLResponse) {
+        clientDelegate?.handleHttpResponse(response)
     }
 }

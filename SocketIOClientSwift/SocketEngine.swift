@@ -232,6 +232,8 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
         
         req.cachePolicy = NSURLRequestCachePolicy.ReloadIgnoringLocalAndRemoteCacheData
         
+        client?.handleHttpRequest(req)
+        
         SocketLogger.log("Doing polling request", client: self)
         
         session.dataTaskWithRequest(req) {[weak self] data, res, err in
@@ -244,6 +246,8 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
                     }
                     return
                 }
+                
+                this.client?.handleHttpResponse(res);
                 
                 SocketLogger.log("Got polling response", client: this)
                 
@@ -315,6 +319,8 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
         req.HTTPBody = postData
         req.setValue(String(postData.length), forHTTPHeaderField: "Content-Length")
         
+        client?.handleHttpRequest(req);
+        
         waitingForPost = true
         
         SocketLogger.log("POSTing: \(postStr)", client: self)
@@ -328,6 +334,8 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
                     NSLog(err.localizedDescription)
                     return
                 }
+                
+                this.client?.handleHttpResponse(res);
                 
                 this.waitingForPost = false
                 
