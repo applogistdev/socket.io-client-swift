@@ -35,6 +35,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
     private let handleQueue = dispatch_queue_create("engineHandleQueue", DISPATCH_QUEUE_SERIAL)
     private let session:NSURLSession!
     
+    private var sessionInvalidated = false
     private var closed = false
     private var _connected = false
     private var extraHeaders:[String: String]?
@@ -310,7 +311,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
     }
     
     private func flushWaitingForPost() {
-        if postWait.count == 0 || !connected {
+        if postWait.count == 0 || !connected || sessionInvalidated {
             return
         } else if websocket {
             flushWaitingForPostToWebSocket()
@@ -688,7 +689,9 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
     }
     
     func stopPolling() {
-        session.invalidateAndCancel()
+        SocketLogger.log("stopPolling", client: self)
+        session.invalidateAndCancel();
+        sessionInvalidated = true;
     }
     
     private func upgradeTransport() {
