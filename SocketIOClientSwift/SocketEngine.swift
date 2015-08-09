@@ -689,6 +689,9 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
     }
     
     func stopPolling() {
+        if sessionInvalidated {
+            return;
+        }
         SocketLogger.log("stopPolling", client: self)
         sessionInvalidated = true;
         dispatch_async(emitQueue) {[weak self] in
