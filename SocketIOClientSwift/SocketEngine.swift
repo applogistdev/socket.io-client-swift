@@ -690,8 +690,12 @@ public final class SocketEngine: NSObject, WebSocketDelegate, SocketLogClient {
     
     func stopPolling() {
         SocketLogger.log("stopPolling", client: self)
-        session.invalidateAndCancel();
         sessionInvalidated = true;
+        dispatch_async(emitQueue) {[weak self] in
+            if let this = self {
+                this.session?.invalidateAndCancel();
+            }
+        }
     }
     
     private func upgradeTransport() {
