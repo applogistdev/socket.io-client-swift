@@ -25,7 +25,7 @@
 import Foundation
 
 public final class SocketIOClient: NSObject, SocketEngineClient {
-    private let emitQueue = dispatch_queue_create("emitQueue", DISPATCH_QUEUE_SERIAL)
+    private let emitQueue = dispatch_queue_create("com.socketio.emitQueue", DISPATCH_QUEUE_SERIAL)
     private let handleQueue: dispatch_queue_t!
 
     var clientDelegate:SocketIOClientDelegate?
@@ -116,7 +116,6 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     
     deinit {
         Logger.log("Client is being deinit", type: logType)
-        engine?.close(fast: true)
     }
     
     private func addEngine() -> SocketEngine {
@@ -177,10 +176,10 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
             
             let time = dispatch_time(DISPATCH_TIME_NOW, Int64(timeoutAfter) * Int64(NSEC_PER_SEC))
 
-            dispatch_after(time, dispatch_get_main_queue()) {
-                if self.status != .Connected {
-                    self.status = .Closed
-                    self.engine?.close(fast: true)
+            dispatch_after(time, handleQueue) {[weak self] in
+                if let this = self where this.status != .Connected {
+                    this.status = .Closed
+                    this.engine?.close(fast: true)
                     
                     handler?()
                 }
