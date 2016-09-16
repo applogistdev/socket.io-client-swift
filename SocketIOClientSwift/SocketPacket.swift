@@ -92,7 +92,7 @@ struct SocketPacket {
         }
         
         binary.append(data)
-        currentPlace++
+        currentPlace += 1
         
         if placeholders == currentPlace {
             currentPlace = 0

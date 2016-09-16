@@ -593,7 +593,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
             return
         }
 
-        ++pongsMissed
+        pongsMissed += 1
         write("", withType: PacketType.Ping, withData: nil)
     }
 
@@ -642,7 +642,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
 
             dispatch_async(dispatch_get_main_queue()) {
                 self.pingTimer = NSTimer.scheduledTimerWithTimeInterval(pingInterval, target: self,
-                    selector: Selector("sendPing"), userInfo: nil, repeats: true)
+                    selector: #selector(SocketEngine.sendPing), userInfo: nil, repeats: true)
             }
         }
     }
