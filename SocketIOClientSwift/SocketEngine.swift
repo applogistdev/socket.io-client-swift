@@ -104,14 +104,13 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         stopPolling()
     }
     
-    private func checkIfMessageIsBase64Binary(var message: String) {
+    private func checkIfMessageIsBase64Binary(message: String) {
         if message.hasPrefix("b4") {
+            var msg = message
             // binary in base64 string
-            message.removeRange(Range<String.Index>(start: message.startIndex,
-                end: message.startIndex.advancedBy(2)))
+            msg.removeRange(message.startIndex ..< message.startIndex.advancedBy(2))
             
-            if let data = NSData(base64EncodedString: message,
-                options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters) {
+            if let data = NSData(base64EncodedString: msg,options: NSDataBase64DecodingOptions.IgnoreUnknownCharacters) {
                     client?.parseBinaryData(data)
             }
         }
@@ -539,30 +538,30 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         client?.parseBinaryData(data.subdataWithRange(NSMakeRange(1, data.length - 1)))
     }
 
-    private func parseEngineMessage(var message: String, fromPolling: Bool) {
-        Logger.log("Got message: %@", type: logType, args: message)
-
-        let type = PacketType(str: (message["^(\\d)"].groups()?[1]) ?? "") ?? {
-            self.checkIfMessageIsBase64Binary(message)
+    private func parseEngineMessage(message: String, fromPolling: Bool) {
+        var msg = message
+        Logger.log("Got message: %@", type: logType, args: msg)
+        let type = PacketType(str: (msg["^(\\d)"].groups()?[1]) ?? "") ?? {
+            self.checkIfMessageIsBase64Binary(msg)
             return .Noop
             }()
         
         
         if fromPolling && type != .Noop {
-            fixDoubleUTF8(&message)
+            fixDoubleUTF8(&msg)
         }
 
         switch type {
         case PacketType.Message:
-            message.removeAtIndex(message.startIndex)
-            handleMessage(message)
+            msg.removeAtIndex(msg.startIndex)
+            handleMessage(msg)
         case PacketType.Noop:
             handleNOOP()
         case PacketType.Pong:
-            handlePong(message)
+            handlePong(msg)
         case PacketType.Open:
-            message.removeAtIndex(message.startIndex)
-            handleOpen(message)
+            msg.removeAtIndex(msg.startIndex)
+            handleOpen(msg)
         case PacketType.Close:
             handleClose()
         default:
@@ -599,24 +598,24 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
 
     /// Send polling message.
     /// Only call on emitQueue
-    private func sendPollMessage(var msg: String, withType type: PacketType,
-        datas:[NSData]? = nil) {
-            Logger.log("Sending poll: %@ as type: %@", type: logType, args: msg, type.rawValue)
+    private func sendPollMessage( msg: String, withType type: PacketType,datas:[NSData]? = nil) {
+        Logger.log("Sending poll: %@ as type: %@", type: logType, args: msg, type.rawValue)
+        var handledMsg = msg
+    
+        doubleEncodeUTF8(&handledMsg)
+        let strMsg = "\(type.rawValue)\(handledMsg)"
 
-            doubleEncodeUTF8(&msg)
-            let strMsg = "\(type.rawValue)\(msg)"
+        postWait.append(strMsg)
 
-            postWait.append(strMsg)
-
-            for data in datas ?? [] {
-                if case let .Right(bin) = createBinaryDataForSend(data) {
-                    postWait.append(bin)
-                }
+        for data in datas ?? [] {
+            if case let .Right(bin) = createBinaryDataForSend(data) {
+                postWait.append(bin)
             }
+        }
 
-            if !waitingForPost {
-                flushWaitingForPost()
-            }
+        if !waitingForPost {
+            flushWaitingForPost()
+        }
     }
 
     /// Send message on WebSockets

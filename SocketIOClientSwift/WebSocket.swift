@@ -203,7 +203,7 @@ public class WebSocket : NSObject, NSStreamDelegate {
     private func generateWebSocketKey() -> String {
         var key = ""
         let seed = 16
-        for i in 0 ..< seed {
+        for _ in 0 ..< seed {
             let uni = UnicodeScalar(UInt32(97 + arc4random_uniform(25)))
             key += "\(Character(uni))"
         }
@@ -671,7 +671,7 @@ public class WebSocket : NSObject, NSStreamDelegate {
             }
             buffer[1] |= s.MaskMask
             let maskKey = UnsafeMutablePointer<UInt8>(buffer + offset)
-            SecRandomCopyBytes(kSecRandomDefault, Int(sizeof(UInt32)), maskKey)
+            _ = SecRandomCopyBytes(kSecRandomDefault, Int(sizeof(UInt32)), maskKey)
             offset += sizeof(UInt32)
             
             for i in 0 ..< dataLength {

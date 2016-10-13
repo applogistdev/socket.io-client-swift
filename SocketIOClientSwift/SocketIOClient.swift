@@ -60,15 +60,16 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     /**
     Create a new SocketIOClient. opts can be omitted
     */
-    public init(var socketURL: String, opts: [String: AnyObject]? = nil) {
+    public init(socketURL: String, opts: [String: AnyObject]? = nil) {
         if socketURL["https://"].matches().count != 0 {
             self.secure = true
         }
         
-        socketURL = socketURL["http://"] ~= ""
-        socketURL = socketURL["https://"] ~= ""
+        var handledUrl = socketURL
+        handledUrl = handledUrl["http://"] ~= ""
+        handledUrl = handledUrl["https://"] ~= ""
         
-        self.socketURL = socketURL
+        self.socketURL = handledUrl
         self.opts = opts
         
         if let connectParams = opts?["connectParams"] as? [String: AnyObject] {

@@ -102,19 +102,18 @@ struct SocketPacket {
         }
     }
     
-    private func completeMessage(var message: String, ack: Bool) -> String {
+    private func completeMessage(message: String, ack: Bool) -> String {
         if data.count == 0 {
             return message + "]"
         }
-        
+        var msg = message
         for arg in data {
             if arg is NSDictionary || arg is [AnyObject] {
                 do {
-                    let jsonSend = try NSJSONSerialization.dataWithJSONObject(arg,
-                        options: NSJSONWritingOptions(rawValue: 0))
+                    let jsonSend = try NSJSONSerialization.dataWithJSONObject(arg,options: NSJSONWritingOptions(rawValue: 0))
                     let jsonString = NSString(data: jsonSend, encoding: NSUTF8StringEncoding)
                     
-                    message += jsonString! as String + ","
+                    msg += jsonString! as String + ","
                 } catch {
                     Logger.error("Error creating JSON object in SocketPacket.completeMessage", type: SocketPacket.logType)
                 }
@@ -122,19 +121,19 @@ struct SocketPacket {
                 str = str["\n"] ~= "\\\\n"
                 str = str["\r"] ~= "\\\\r"
                 
-                message += "\"\(str)\","
+                msg += "\"\(str)\","
             } else if arg is NSNull {
-                message += "null,"
+                msg += "null,"
             } else {
-                message += "\(arg),"
+                msg += "\(arg),"
             }
         }
         
-        if message != "" {
-            message.removeAtIndex(message.endIndex.predecessor())
+        if msg != "" {
+            msg.removeAtIndex(msg.endIndex.predecessor())
         }
         
-        return message + "]"
+        return msg + "]"
     }
     
     private func createAck() -> String {
@@ -297,18 +296,18 @@ private extension SocketPacket {
         }
     }
     
-    static func deconstructData(var data: [AnyObject]) -> ([AnyObject], [NSData]) {
+    static func deconstructData(data: [AnyObject]) -> ([AnyObject], [NSData]) {
         var binary = [NSData]()
-        
-        for i in 0..<data.count {
-            if data[i] is NSArray || data[i] is NSDictionary {
-                data[i] = shred(data[i], binary: &binary)
+        var handledData = data
+        for i in 0 ..< handledData.count {
+            if handledData[i] is NSArray || handledData[i] is NSDictionary {
+                handledData[i] = shred(handledData[i], binary: &binary)
             } else if let bin = data[i] as? NSData {
-                data[i] = ["_placeholder" :true, "num": binary.count]
+                handledData[i] = ["_placeholder" :true, "num": binary.count]
                 binary.append(bin)
             }
         }
         
-        return (data, binary)
+        return (handledData, binary)
     }
 }
