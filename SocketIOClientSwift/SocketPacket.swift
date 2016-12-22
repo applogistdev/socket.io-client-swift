@@ -38,7 +38,7 @@ struct SocketPacket {
         case Connect, Disconnect, Event, Ack, Error, BinaryEvent, BinaryAck
         
         init?(str: String) {
-            if let int = Int(str), raw = PacketType(rawValue: int) {
+            if let int = Int(str), let raw = PacketType(rawValue: int) {
                 self = raw
             } else {
                 return nil
@@ -53,7 +53,7 @@ struct SocketPacket {
             return nil
         } else {
             if type == PacketType.Event || type == PacketType.BinaryEvent {
-                arr.removeAtIndex(0)
+                arr.remove(at: 0)
                 return arr
             } else {
                 return arr
@@ -65,11 +65,11 @@ struct SocketPacket {
     var data: [AnyObject]
     var description: String {
         return "SocketPacket {type: \(String(type.rawValue)); data: " +
-            "\(String(data)); id: \(id); placeholders: \(placeholders); nsp: \(nsp)}"
+            "\(String(describing: data)); id: \(id); placeholders: \(placeholders); nsp: \(nsp)}"
     }
     
     var event: String {
-        return data[0] as? String ?? String(data[0])
+        return data[0] as? String ?? String(describing: data[0])
     }
     
     var packetString: String {
@@ -110,12 +110,12 @@ struct SocketPacket {
         for arg in data {
             if arg is NSDictionary || arg is [AnyObject] {
                 do {
-                    let jsonSend = try NSJSONSerialization.dataWithJSONObject(arg,options: NSJSONWritingOptions(rawValue: 0))
-                    let jsonString = NSString(data: jsonSend, encoding: NSUTF8StringEncoding)
+                    let jsonSend = try JSONSerialization.data(withJSONObject: arg,options: JSONSerialization.WritingOptions(rawValue: 0))
+                    let jsonString = String(data: jsonSend, encoding: .utf8)
                     
                     msg += jsonString! as String + ","
                 } catch {
-                    Logger.error("Error creating JSON object in SocketPacket.completeMessage", type: SocketPacket.logType)
+                    Logger.error(message: "Error creating JSON object in SocketPacket.completeMessage", type: SocketPacket.logType)
                 }
             } else if var str = arg as? String {
                 str = str["\n"] ~= "\\\\n"
@@ -130,7 +130,7 @@ struct SocketPacket {
         }
         
         if msg != "" {
-            msg.removeAtIndex(msg.endIndex.predecessor())
+            msg.remove(at: msg.index(before: msg.endIndex))
         }
         
         return msg + "]"
@@ -153,7 +153,7 @@ struct SocketPacket {
             }
         }
         
-        return completeMessage(msg, ack: true)
+        return completeMessage(message: msg, ack: true)
     }
 
     
@@ -190,7 +190,7 @@ struct SocketPacket {
             }
         }
         
-        return completeMessage(message, ack: false)
+        return completeMessage(message: message, ack: false)
     }
     
     private func createPacketString() -> String {
@@ -207,10 +207,10 @@ struct SocketPacket {
     
     mutating func fillInPlaceholders() {
         for i in 0..<data.count {
-            if let str = data[i] as? String, num = str["~~(\\d)"].groups() {
+            if let str = data[i] as? String, let num = str["~~(\\d)"].groups() {
                 data[i] = binary[Int(num[1])!]
             } else if data[i] is NSDictionary || data[i] is NSArray {
-                data[i] = _fillInPlaceholders(data[i])
+                data[i] = _fillInPlaceholders(data: data[i])
             }
         }
     }
@@ -220,13 +220,13 @@ struct SocketPacket {
             if let num = str["~~(\\d)"].groups() {
                 return binary[Int(num[1])!]
             } else {
-                return str
+                return str as AnyObject
             }
         } else if let dict = data as? NSDictionary {
             let newDict = NSMutableDictionary(dictionary: dict)
             
             for (key, value) in dict {
-                newDict[key as! NSCopying] = _fillInPlaceholders(value)
+                newDict[key as! NSCopying] = _fillInPlaceholders(data: value as AnyObject)
             }
             
             return newDict
@@ -234,7 +234,7 @@ struct SocketPacket {
             let newArr = NSMutableArray(array: arr)
             
             for i in 0..<arr.count {
-                newArr[i] = _fillInPlaceholders(arr[i])
+                newArr[i] = _fillInPlaceholders(data: arr[i] as AnyObject)
             }
             
             return newArr
@@ -261,8 +261,8 @@ extension SocketPacket {
     }
     
     static func packetFromEmit(items: [AnyObject], id: Int, nsp: String, ack: Bool) -> SocketPacket {
-        let (parsedData, binary) = deconstructData(items)
-        let packet = SocketPacket(type: findType(binary.count, ack: ack), data: parsedData,
+        let (parsedData, binary) = deconstructData(data: items)
+        let packet = SocketPacket(type: findType(binCount: binary.count, ack: ack), data: parsedData,
             id: id, nsp: nsp, placeholders: -1, binary: binary)
         
         return packet
@@ -270,24 +270,24 @@ extension SocketPacket {
 }
 
 private extension SocketPacket {
-    static func shred(data: AnyObject, inout binary: [NSData]) -> AnyObject {
+    static func shred(data: AnyObject, binary: inout [NSData]) -> AnyObject {
         if let bin = data as? NSData {
-            let placeholder = ["_placeholder" :true, "num": binary.count]
+            let placeholder = ["_placeholder" :true, "num": binary.count] as [String : Any]
             
             binary.append(bin)
             
-            return placeholder
+            return placeholder as AnyObject
         } else if var arr = data as? [AnyObject] {
-            for i in 0..<arr.count {
-                arr[i] = shred(arr[i], binary: &binary)
+            for i in 0 ..< arr.count {
+                arr[i] = shred(data: arr[i], binary: &binary)
             }
             
-            return arr
+            return arr as AnyObject
         } else if let dict = data as? NSDictionary {
             let mutDict = NSMutableDictionary(dictionary: dict)
             
             for (key, value) in dict {
-                mutDict[key as! NSCopying] = shred(value, binary: &binary)
+                mutDict[key as! NSCopying] = shred(data: value as AnyObject, binary: &binary)
             }
             
             return mutDict
@@ -301,9 +301,9 @@ private extension SocketPacket {
         var handledData = data
         for i in 0 ..< handledData.count {
             if handledData[i] is NSArray || handledData[i] is NSDictionary {
-                handledData[i] = shred(handledData[i], binary: &binary)
+                handledData[i] = shred(data: handledData[i], binary: &binary)
             } else if let bin = data[i] as? NSData {
-                handledData[i] = ["_placeholder" :true, "num": binary.count]
+                handledData[i] = ["_placeholder" :true, "num": binary.count] as AnyObject
                 binary.append(bin)
             }
         }

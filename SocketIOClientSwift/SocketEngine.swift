@@ -28,13 +28,13 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     private typealias Probe = (msg: String, type: PacketType, data: [NSData]?)
     private typealias ProbeWaitQueue = [Probe]
 
-    private let allowedCharacterSet = NSCharacterSet(charactersInString: "!*'();:@&=+$,/?%#[]\" {}").invertedSet
-    private let emitQueue = dispatch_queue_create("com.socketio.engineEmitQueue", DISPATCH_QUEUE_SERIAL)
-    private let handleQueue = dispatch_queue_create("com.socketio.engineHandleQueue", DISPATCH_QUEUE_SERIAL)
+    private let allowedCharacterSet = NSCharacterSet(charactersIn: "!*'();:@&=+$,/?%#[]\" {}").inverted
+    private let emitQueue = DispatchQueue(label:"com.socketio.engineEmitQueue")
+    private let handleQueue = DispatchQueue(label:"com.socketio.engineHandleQueue")
     private let logType = "SocketEngine"
-    private let parseQueue = dispatch_queue_create("com.socketio.engineParseQueue", DISPATCH_QUEUE_SERIAL)
-    private let session: NSURLSession!
-    private let workQueue = NSOperationQueue()
+    private let parseQueue = DispatchQueue(label:"com.socketio.engineParseQueue")
+    private let session: URLSession!
+    private let workQueue = OperationQueue()
 
     private var closed = false
     private var extraHeaders: [String: String]?
@@ -43,7 +43,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     private var forceWebsockets = false
     private var invalidated = false
     private var pingInterval: Double?
-    private var pingTimer: NSTimer?
+    private var pingTimer: Timer?
     private var pingTimeout = 0.0 {
         didSet {
             pongsMissedMax = Int(pingTimeout / (pingInterval ?? 25))
@@ -63,7 +63,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     private(set) var websocket = false
 
     weak var client: SocketEngineClient?
-    var cookies: [NSHTTPCookie]?
+    var cookies: [HTTPCookie]?
     var sid = ""
     var socketPath = ""
     var urlPolling = ""
@@ -75,7 +75,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         case Open, Close, Ping, Pong, Message, Upgrade, Noop
 
         init?(str: String) {
-            if let value = Int(str), raw = PacketType(rawValue: value) {
+            if let value = Int(str), let raw = PacketType(rawValue: value) {
                 self = raw
             } else {
                 return nil
@@ -83,23 +83,22 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         }
     }
 
-    public init(client: SocketEngineClient, sessionDelegate: NSURLSessionDelegate?) {
+    public init(client: SocketEngineClient, sessionDelegate: URLSessionDelegate?) {
         self.client = client
-        self.session = NSURLSession(configuration: NSURLSessionConfiguration.defaultSessionConfiguration(),
-            delegate: sessionDelegate, delegateQueue: workQueue)
+        self.session = URLSession(configuration: URLSessionConfiguration.defaultSessionConfiguration,delegate: sessionDelegate, delegateQueue: workQueue)
     }
 
     public convenience init(client: SocketEngineClient, opts: NSDictionary?) {
-        self.init(client: client, sessionDelegate: opts?["sessionDelegate"] as? NSURLSessionDelegate)
+        self.init(client: client, sessionDelegate: opts?["sessionDelegate"] as? URLSessionDelegate)
         forceWebsockets = opts?["forceWebsockets"] as? Bool ?? false
         forcePolling = opts?["forcePolling"] as? Bool ?? false
-        cookies = opts?["cookies"] as? [NSHTTPCookie]
+        cookies = opts?["cookies"] as? [HTTPCookie]
         socketPath = opts?["path"] as? String ?? ""
         extraHeaders = opts?["extraHeaders"] as? [String: String]
     }
 
     deinit {
-        Logger.log("Engine is being deinit", type: logType)
+        //Logger.log("Engine is being deinit", type: logType)
         closed = true
         stopPolling()
     }
@@ -116,7 +115,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         }
     }
 
-    public func close(fast fast: Bool) {
+    public func close(fast: Bool) {
         Logger.log("Engine is being closed. Fast: %@", type: logType, args: fast)
 
         pingTimer?.invalidate()
@@ -398,7 +397,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     }
 
     private func handleClose() {
-        if let client = client where polling == true {
+        if let client = client, polling == true {
             client.engineDidClose("Disconnect")
         }
     }
@@ -428,7 +427,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
                     upgradeWs = false
                 }
                 
-                if let pingInterval = json?["pingInterval"] as? Double, pingTimeout = json?["pingTimeout"] as? Double {
+                if let pingInterval = json?["pingInterval"] as? Double, let pingTimeout = json?["pingTimeout"] as? Double {
                     self.pingInterval = pingInterval / 1000.0
                     self.pingTimeout = pingTimeout / 1000.0
                 }
@@ -553,15 +552,15 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
 
         switch type {
         case PacketType.Message:
-            msg.removeAtIndex(msg.startIndex)
+            msg.remove(at: msg.startIndex)
             handleMessage(msg)
         case PacketType.Noop:
             handleNOOP()
         case PacketType.Pong:
             handlePong(msg)
         case PacketType.Open:
-            msg.removeAtIndex(msg.startIndex)
-            handleOpen(msg)
+            msg.remove(at: msg.startIndex)
+            handleOpen(openData: msg)
         case PacketType.Close:
             handleClose()
         default:
