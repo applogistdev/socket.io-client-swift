@@ -145,18 +145,18 @@ open class WebSocket : NSObject, StreamDelegate {
     
     ///write a string to the websocket. This sends it as a text frame.
     open func writeString(_ str: String) {
-        dequeueWrite(str.data(using: String.Encoding.utf8)!, code: .textFrame)
+        dequeueWrite(str.data(using: String.Encoding.utf8)! as NSData, code: .textFrame)
     }
     
     ///write binary data to the websocket. This sends it as a binary frame.
     open func writeData(_ data: Data) {
-        dequeueWrite(data, code: .binaryFrame)
+        dequeueWrite(data as NSData, code: .binaryFrame)
     }
     
     //write a   ping   to the websocket. This sends it as a  control frame.
     //yodel a   sound  to the planet.    This sends it as an astroid. http://youtu.be/Eu5ZJELRiJ8?t=42s
     open func writePing(_ data: Data) {
-        dequeueWrite(data, code: .ping)
+        dequeueWrite(data as NSData, code: .ping)
     }
     //private methods below!
     
@@ -468,7 +468,16 @@ open class WebSocket : NSObject, StreamDelegate {
                 if payloadLen == 1 {
                     code = CloseCode.protocolError.rawValue
                 } else if payloadLen > 1 {
-                    let codeBuffer = UnsafePointer<UInt16>((buffer+offset))
+                    let param:UnsafePointer<UInt8> = buffer + offset
+                    var codeBuffer:UnsafePointer<UInt16>!
+                    //let codeBuffer =
+                    //let codeBuffer = UnsafePointer<UInt16>((buffer+offset))
+                    withUnsafePointer(to: &codeBuffer, { (pointer) in
+                        param.withMemoryRebound(to: UInt16.self, capacity: MemoryLayout<UInt16>.size, { (pointer)  in
+                            
+                        })
+                    })
+                    
                     code = codeBuffer[0].bigEndian
                     if code < 1000 || (code > 1003 && code < 1007) || (code > 1011 && code < 3000) {
                         code = CloseCode.protocolError.rawValue
@@ -495,11 +504,29 @@ open class WebSocket : NSObject, StreamDelegate {
             }
             var dataLength = UInt64(payloadLen)
             if dataLength == 127 {
-                let bytes = UnsafePointer<UInt64>((buffer+offset))
+                
+                let param:UnsafePointer<UInt8> = buffer + offset
+                var bytes:UnsafePointer<UInt64>!
+                withUnsafePointer(to: &bytes, { (pointer) in
+                    param.withMemoryRebound(to: UInt64.self, capacity: MemoryLayout<UInt64>.size, { (pointer)  in
+                        
+                    })
+                })
+                
+                //let bytes = UnsafePointer<UInt64>((buffer+offset))
                 dataLength = bytes[0].bigEndian
                 offset += MemoryLayout<UInt64>.size
             } else if dataLength == 126 {
-                let bytes = UnsafePointer<UInt16>((buffer+offset))
+                
+                let param:UnsafePointer<UInt8> = buffer + offset
+                var bytes:UnsafePointer<UInt16>!
+                withUnsafePointer(to: &bytes, { (pointer) in
+                    param.withMemoryRebound(to: UInt64.self, capacity: MemoryLayout<UInt64>.size, { (pointer)  in
+                        
+                    })
+                })
+                
+                //let bytes = UnsafePointer<UInt16>((buffer+offset))
                 dataLength = UInt64(bytes[0].bigEndian)
                 offset += MemoryLayout<UInt16>.size
             }
@@ -602,7 +629,7 @@ open class WebSocket : NSObject, StreamDelegate {
         if response.isFin && response.bytesLeft <= 0 {
             if response.code == .ping {
                 let data = response.buffer! //local copy so it is perverse for writing
-                dequeueWrite(data as Data, code: OpCode.pong)
+                dequeueWrite(data, code: OpCode.pong)
             } else if response.code == .textFrame {
                 let str: String? = String(data: response.buffer! as Data, encoding: String.Encoding.utf8)
                 if str == nil {
@@ -652,10 +679,10 @@ open class WebSocket : NSObject, StreamDelegate {
         let buf = NSMutableData(capacity: MemoryLayout<UInt16>.size)
         let buffer = UnsafeMutablePointer<UInt16>(mutating: buf!.bytes.bindMemory(to: UInt16.self, capacity: buf!.length))
         buffer[0] = code.bigEndian
-        dequeueWrite(NSData(bytes: buffer, length: MemoryLayout<UInt16>.size) as Data, code: .connectionClose)
+        dequeueWrite(NSData(bytes: buffer, length: MemoryLayout<UInt16>.size), code: .connectionClose)
     }
     ///used to write things to the stream
-    fileprivate func dequeueWrite(_ data: Data, code: OpCode) {
+    fileprivate func dequeueWrite(_ data: NSData, code: OpCode) {
         if !isConnected {
             return
         }
@@ -663,21 +690,39 @@ open class WebSocket : NSObject, StreamDelegate {
             //stream isn't ready, let's wait
             guard let s = self else { return }
             var offset = 2
-            let bytes = UnsafeMutablePointer<UInt8>(data.bytes)
-            let dataLength = data.count
+            let bytes = data.bytes.assumingMemoryBound(to: UInt8.self)
+            let dataLength = data.length
             let frame = NSMutableData(capacity: dataLength + s.MaxFrameSize)
-            let buffer = UnsafeMutablePointer<UInt8>(frame!.mutableBytes)
+            let buffer = frame!.mutableBytes.assumingMemoryBound(to: UInt8.self)
             buffer[0] = s.FinMask | code.rawValue
             if dataLength < 126 {
                 buffer[1] = CUnsignedChar(dataLength)
             } else if dataLength <= Int(UInt16.max) {
                 buffer[1] = 126
-                let sizeBuffer = UnsafeMutablePointer<UInt16>((buffer+offset))
+                
+                
+                let param = buffer + offset
+                var sizeBuffer:UnsafeMutablePointer<UInt16>!
+                withUnsafePointer(to: &sizeBuffer, { (pointer) in
+                    param.withMemoryRebound(to: UInt16.self, capacity: MemoryLayout<UInt16>.size, { (pointer)  in
+                        
+                    })
+                })
+                
+                //let sizeBuffer = UnsafeMutablePointer<UInt16>(buffer+offset)
                 sizeBuffer[0] = UInt16(dataLength).bigEndian
                 offset += MemoryLayout<UInt16>.size
             } else {
                 buffer[1] = 127
-                let sizeBuffer = UnsafeMutablePointer<UInt64>((buffer+offset))
+                
+                let param = buffer + offset
+                var sizeBuffer:UnsafeMutablePointer<UInt64>!
+                withUnsafePointer(to: &sizeBuffer, { (pointer) in
+                    param.withMemoryRebound(to: UInt64.self, capacity: MemoryLayout<UInt64>.size, { (pointer)  in
+                        
+                    })
+                })
+                
                 sizeBuffer[0] = UInt64(dataLength).bigEndian
                 offset += MemoryLayout<UInt64>.size
             }
@@ -696,7 +741,10 @@ open class WebSocket : NSObject, StreamDelegate {
                     break
                 }
                 guard let outStream = s.outputStream else { break }
-                let writeBuffer = UnsafePointer<UInt8>(frame!.bytes+total)
+                
+                let param:UnsafeRawPointer = frame!.bytes.advanced(by: total)
+                
+                let writeBuffer:UnsafePointer<UInt8> = param.assumingMemoryBound(to: UInt8.self)
                 let len = outStream.write(writeBuffer, maxLength: offset-total)
                 if len < 0 {
                     var error: Error?
