@@ -98,7 +98,8 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     }
 
     deinit {
-        //Logger.log("Engine is being deinit", type: logType)
+        
+        Logger.log("Engine is being deinit", type: logType)
         closed = true
         stopPolling()
     }
@@ -116,7 +117,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     }
 
     public func close(_ fast: Bool) {
-        //Logger.log("Engine is being closed. Fast: %@", type: logType, args: fast)
+        Logger.log("Engine is being closed. Fast: %@", type: logType, args: fast as AnyObject)
 
         pingTimer?.invalidate()
         closed = true
@@ -255,7 +256,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         
             client?.handleHttpRequest(req as URLRequest)
         
-            //Logger.log("Doing polling request", type: logType)
+            Logger.log("Doing polling request", type: logType)
 
             req.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
             session.dataTask(with: req as URLRequest, completionHandler: callback).resume()
@@ -277,7 +278,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
                     this.client?.handleHttpResponse(res!);
                 }
                 
-                //Logger.log("Got polling response", type: this.logType)
+                Logger.log("Got polling response", type: this.logType)
                 
                 if let str = String(data: data!, encoding: String.Encoding.utf8)  {
                     this.parseQueue.async(execute: {[weak this] in
@@ -297,7 +298,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     }
 
     fileprivate func flushProbeWait() {
-        //Logger.log("Flushing probe wait", type: logType)
+        Logger.log("Flushing probe wait", type: logType)
 
         emitQueue.async(execute: {[weak self] in
             if let this = self {
@@ -351,7 +352,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         
         waitingForPost = true
 
-        //Logger.log("POSTing: %@", type: logType, args: postStr)
+        Logger.log("POSTing: %@", type: logType, args: postStr as AnyObject)
 
         doRequest(req) {[weak self] data, res, err in
             if let this = self {
@@ -473,8 +474,8 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
             return
         }
 
-//        Logger.log("Starting engine", type: logType)
-//        Logger.log("Handshaking", type: logType)
+        Logger.log("Starting engine", type: logType)
+        Logger.log("Handshaking", type: logType)
 
         closed = false
 
@@ -527,14 +528,14 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     }
 
     fileprivate func parseEngineData(_ data: Data) {
-        //Logger.log("Got binary data: %@", type: "SocketEngine", args: data)
+        Logger.log("Got binary data: %@", type: "SocketEngine", args: data as AnyObject)
         
         client?.parseBinaryData(data.subdata(in: data.index(0, offsetBy: 1) ..<  data.index(0, offsetBy: data.count - 1)))
     }
 
     fileprivate func parseEngineMessage(_ message: String, fromPolling: Bool) {
         var msg = message
-        //Logger.log("Got message: %@", type: logType, args: msg)
+        Logger.log("Got message: %@", type: logType, args: msg as AnyObject)
         
         var type:PacketType! = PacketType(str: (msg["^(\\d)"].groups()?[1]) ?? "")
         if type == nil {
@@ -559,8 +560,9 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
             handleOpen(msg)
         case PacketType.close:
             handleClose()
-        default: break
-            //Logger.log("Got unknown packet type", type: logType)
+        default:
+            Logger.log("Got unknown packet type", type: logType)
+            break
         }
     }
 
@@ -594,7 +596,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     /// Send polling message.
     /// Only call on emitQueue
     fileprivate func sendPollMessage( _ msg: String, withType type: PacketType,datas:[Data]? = nil) {
-        //Logger.log("Sending poll: %@ as type: %@", type: logType, args: msg, type.rawValue)
+        Logger.log("Sending poll: %@ as type: %@", type: logType, args: msg as AnyObject, type.rawValue as AnyObject)
         var handledMsg = msg
     
         doubleEncodeUTF8(&handledMsg)
@@ -616,7 +618,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     /// Send message on WebSockets
     /// Only call on emitQueue
     fileprivate func sendWebSocketMessage(_ str: String, withType type: PacketType,datas:[Data]? = nil) {
-            //Logger.log("Sending ws: %@ as type: %@", type: logType, args: str, type.rawValue)
+            Logger.log("Sending ws: %@ as type: %@", type: logType, args: str as AnyObject, type.rawValue as AnyObject)
 
             ws?.writeString("\(type.rawValue)\(str)")
 
@@ -647,7 +649,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
 
     fileprivate func upgradeTransport() {
         if websocketConnected {
-            //Logger.log("Upgrading transport to WebSockets", type: logType)
+            Logger.log("Upgrading transport to WebSockets", type: logType)
 
             fastUpgrade = true
             sendPollMessage("", withType: PacketType.noop)
@@ -662,10 +664,10 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         emitQueue.async {
             if self.connected {
                 if self.websocket {
-                    //Logger.log("Writing ws: %@ has data: %@", type: self.logType, args: msg,data == nil ? false : true)
+                    Logger.log("Writing ws: %@ has data: %@", type: self.logType, args: msg as AnyObject,(data == nil ? false : true) as AnyObject)
                     self.sendWebSocketMessage(msg, withType: type, datas: data)
                 } else {
-                    //Logger.log("Writing poll: %@ has data: %@", type: self.logType, args: msg,data == nil ? false : true)
+                    Logger.log("Writing poll: %@ has data: %@", type: self.logType, args: msg as AnyObject,(data == nil ? false : true) as AnyObject)
                     self.sendPollMessage(msg, withType: type, datas: data)
                 }
             }

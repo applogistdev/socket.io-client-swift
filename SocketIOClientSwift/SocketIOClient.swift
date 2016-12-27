@@ -81,7 +81,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
         }
         
         if let log = opts?["log"] as? Bool {
-            Logger.log = log
+            Logger.enableLog = log
         }
         
         if let nsp = opts?["nsp"] as? String {
@@ -225,7 +225,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
             return
         }
         
-        //Logger.log("Disconnected: %@", type: logType, args: reason)
+        Logger.log("Disconnected: %@", type: logType, args: reason as AnyObject)
         
         status = .closed
         reconnects = false
@@ -293,7 +293,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
         let packet = SocketPacket.packetFromEmit(data, id: ack ?? -1, nsp: nsp, ack: false)
         let str = packet.packetString
         
-        //Logger.log("Emitting: %@", type: logType, args: str)
+        Logger.log("Emitting: %@", type: logType, args: str as AnyObject)
         
         if packet.type == .binaryEvent {
             engine?.send(str, withData: packet.binary)
@@ -309,7 +309,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
                 let packet = SocketPacket.packetFromEmit(items, id: ack , nsp: self.nsp, ack: true)
                 let str = packet.packetString
                 
-                //Logger.log("Emitting Ack: %@", type: self.logType, args: str)
+                Logger.log("Emitting Ack: %@", type: self.logType, args: str as AnyObject)
                 
                 if packet.type == SocketPacket.PacketType.binaryAck {
                     self.engine?.send(str, withData: packet.binary)
@@ -335,7 +335,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     
     // Called when the socket gets an ack for something it sent
     func handleAck(_ ack: Int, data: AnyObject?) {
-        //Logger.log("Handling ack: %@ with data: %@", type: logType, args: ack, data ?? "")
+        Logger.log("Handling ack: %@ with data: %@", type: logType, args: ack as AnyObject, data ?? "" as AnyObject)
         
         ackHandlers.executeAck(ack,
             items: (data as? [AnyObject]) ?? (data != nil ? [data!] : []))
@@ -350,7 +350,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
                 return
             }
             
-            //Logger.log("Handling event: %@ with data: %@", type: logType, args: event, data ?? "")
+            Logger.log("Handling event: %@ with data: %@", type: logType, args: event as AnyObject, (data as AnyObject? ?? "" as AnyObject) )
             
             if anyHandler != nil {
                 handleQueue.async {
@@ -404,7 +404,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     Removes handler(s)
     */
     public func off(_ event: String) {
-        //Logger.log("Removing handler for event: %@", type: logType, args: event)
+        Logger.log("Removing handler for event: %@", type: logType, args: event as AnyObject)
         
         handlers = ContiguousArray(handlers.filter { $0.event != event })
     }
@@ -413,7 +413,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     Adds a handler for an event.
     */
     public func on(_ event: String, callback: @escaping NormalCallback) {
-        //Logger.log("Adding handler for event: %@", type: logType, args: event)
+        Logger.log("Adding handler for event: %@", type: logType, args: event as AnyObject)
         
         let handler = SocketEventHandler(event: event, callback: callback)
         handlers.append(handler)
@@ -423,7 +423,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     Adds a single-use handler for an event.
     */
     public func once(_ event: String, callback: @escaping NormalCallback) {
-        //Logger.log("Adding once handler for event: %@", type: logType, args: event)
+        Logger.log("Adding once handler for event: %@", type: logType, args: event as AnyObject)
         
         let id = UUID()
         

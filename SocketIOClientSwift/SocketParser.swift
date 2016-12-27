@@ -56,7 +56,7 @@ class SocketParser {
         case .error:
             socket.didError(pack.data as AnyObject)
         default: break
-            //Logger.log("Got invalid packet: %@", type: "SocketParser", args: pack.description)
+            Logger.log("Got invalid packet: %@", type: "SocketParser", args: pack.description as AnyObject)
         }
     }
     
@@ -143,13 +143,13 @@ class SocketParser {
     static func parseSocketMessage(_ message: String, socket: SocketIOClient) {
         guard !message.isEmpty else { return }
         
-        //Logger.log("Parsing %@", type: "SocketParser", args: message)
+        Logger.log("Parsing %@", type: "SocketParser", args: message as AnyObject)
         
         switch parseString(message) {
         case .left(let err):
             Logger.error("\(err): %@", type: "SocketParser", args: message as AnyObject)
         case .right(let pack):
-            //Logger.log("Decoded packet as: %@", type: "SocketParser", args: pack.description)
+            Logger.log("Decoded packet as: %@", type: "SocketParser", args: pack.description as AnyObject)
             handlePacket(pack, withSocket: socket)
         }
     }

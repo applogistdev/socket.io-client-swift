@@ -28,7 +28,7 @@ var Logger: SocketLogger = DefaultSocketLogger()
 
 public protocol SocketLogger {
     /// Whether to log or not
-    var log: Bool {get set}
+    var enableLog: Bool {get set}
     
     /// Normal log messages
     func log(_ message: String, type: String, args: AnyObject...)
@@ -47,7 +47,7 @@ public extension SocketLogger {
     }
     
     fileprivate func abstractLog(_ logType: String, message: String, type: String, args: [AnyObject]) {
-        guard log else { return }
+        guard enableLog else { return }
         
         let newArgs = args.map {arg -> CVarArg in String(describing: arg)}
         let replaced = String(format: message, arguments: newArgs)
@@ -57,5 +57,5 @@ public extension SocketLogger {
 }
 
 struct DefaultSocketLogger: SocketLogger {
-    var log = false
+    var enableLog = false
 }
