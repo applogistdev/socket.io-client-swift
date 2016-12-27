@@ -198,8 +198,8 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
                 }
                 
                 if timeout != 0 {
-                    
-                    let time = DispatchTime.now() + Double(Int64(timeout) * Int64(NSEC_PER_SEC)) 
+                                        
+                    let time = DispatchTime.now() + Double(Int64(timeout) * Int64(NSEC_PER_SEC)) / Double(NSEC_PER_SEC)
                     
                     DispatchQueue.main.asyncAfter(deadline: time) {[weak self] in
                         self?.ackHandlers.timeoutAck(ack)
