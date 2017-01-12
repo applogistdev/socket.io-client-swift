@@ -52,11 +52,11 @@ private func ==(lhs: SocketAck, rhs: SocketAck) -> Bool {
 struct SocketAckManager {
     fileprivate var acks = Set<SocketAck>(minimumCapacity: 1)
     
-    mutating func addAck(_ ack: Int, callback: @escaping AckCallback) {
+    mutating func addAck(ack: Int, callback: @escaping AckCallback) {
         acks.insert(SocketAck(ack: ack, callback: callback))
     }
     
-    mutating func executeAck(_ ack: Int, items: [AnyObject]) {
+    mutating func executeAck(ack: Int, items: [AnyObject]) {
         let callback = acks.remove(SocketAck(ack: ack))
 
         DispatchQueue.main.async {
@@ -64,7 +64,7 @@ struct SocketAckManager {
         }
     }
     
-    mutating func timeoutAck(_ ack: Int) {
+    mutating func timeoutAck(ack: Int) {
         let callback = acks.remove(SocketAck(ack: ack))
         
         DispatchQueue.main.async {

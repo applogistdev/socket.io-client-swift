@@ -29,11 +29,11 @@ import Foundation
     var socketURL: String {get}
     var secure: Bool {get}
     
-    func didError(_ reason: AnyObject)
-    func engineDidClose(_ reason: String)
-    func parseSocketMessage(_ msg: String)
-    func parseBinaryData(_ data: Data)
+    func didError(reason: AnyObject)
+    func engineDidClose(reason: String)
+    func parseSocketMessage(msg: String)
+    func parseBinaryData(data: Data)
     
-    func handleHttpRequest(_ request:URLRequest)
-    func handleHttpResponse(_ response:URLResponse)
+    func handleHttpRequest(request:URLRequest)
+    func handleHttpResponse(response:URLResponse)
 }

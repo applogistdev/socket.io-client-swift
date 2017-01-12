@@ -31,22 +31,22 @@ public protocol SocketLogger {
     var enableLog: Bool {get set}
     
     /// Normal log messages
-    func log(_ message: String, type: String, args: AnyObject...)
+    func log(message: String, type: String, args: AnyObject...)
     
     /// Error Messages
-    func error(_ message: String, type: String, args: AnyObject...)
+    func error(message: String, type: String, args: AnyObject...)
 }
 
 public extension SocketLogger {
-    func log(_ message: String, type: String, args: AnyObject...) {
-        abstractLog("Log", message: message, type: type, args: args)
+    func log(message: String, type: String, args: AnyObject...) {
+        abstractLog(logType: "Log", message: message, type: type, args: args)
     }
     
-    func error(_ message: String, type: String, args: AnyObject...) {
-        abstractLog("ERROR", message: message, type: type, args: args)
+    func error(message: String, type: String, args: AnyObject...) {
+        abstractLog(logType: "ERROR", message: message, type: type, args: args)
     }
     
-    fileprivate func abstractLog(_ logType: String, message: String, type: String, args: [AnyObject]) {
+    fileprivate func abstractLog(logType: String, message: String, type: String, args: [AnyObject]) {
         guard enableLog else { return }
         
         let newArgs = args.map {arg -> CVarArg in String(describing: arg)}

@@ -24,7 +24,7 @@
 
 import Foundation
 
-private func emitAckCallback(_ socket: SocketIOClient, num: Int?) -> SocketAckEmitter? {
+private func emitAckCallback(socket: SocketIOClient, num: Int?) -> SocketAckEmitter? {
     return num != nil ? SocketAckEmitter(socket: socket, ackNum: num!) : nil
 }
 
@@ -39,8 +39,8 @@ struct SocketEventHandler {
         self.callback = callback
     }
     
-    func executeCallback(_ items: [AnyObject], withAck ack: Int? = nil, withAckType type: Int? = nil,
+    func executeCallback(items: [AnyObject], withAck ack: Int? = nil, withAckType type: Int? = nil,
         withSocket socket: SocketIOClient) {
-                self.callback(items, emitAckCallback(socket, num: ack))
+                self.callback(items, emitAckCallback(socket: socket, num: ack))
     }
 }

@@ -24,11 +24,11 @@ import Foundation
 
 class SocketParser {
     
-    fileprivate static func isCorrectNamespace(_ nsp: String, _ socket: SocketIOClient) -> Bool {
+    fileprivate static func isCorrectNamespace(nsp: String, socket: SocketIOClient) -> Bool {
         return nsp == socket.nsp
     }
 
-    fileprivate static func handleConnect(_ p: SocketPacket, socket: SocketIOClient) {
+    fileprivate static func handleConnect(p: SocketPacket, socket: SocketIOClient) {
         if p.nsp == "/" && socket.nsp != "/" {
             socket.joinNamespace()
         } else if p.nsp != "/" && socket.nsp == "/" {
@@ -38,32 +38,32 @@ class SocketParser {
         }
     }
     
-    fileprivate static func handlePacket(_ pack: SocketPacket, withSocket socket: SocketIOClient) {
+    fileprivate static func handlePacket(pack: SocketPacket, withSocket socket: SocketIOClient) {
         switch pack.type {
-        case .event where isCorrectNamespace(pack.nsp, socket):
-            socket.handleEvent(pack.event, data: pack.args ?? [],
+        case .event where isCorrectNamespace(nsp:pack.nsp, socket: socket):
+            socket.handleEvent(event: pack.event, data: pack.args ?? [],
                 isInternalMessage: false, wantsAck: pack.id)
-        case .ack where isCorrectNamespace(pack.nsp, socket):
-            socket.handleAck(pack.id, data: pack.data as AnyObject?)
-        case .binaryEvent where isCorrectNamespace(pack.nsp, socket):
+        case .ack where isCorrectNamespace(nsp:pack.nsp, socket: socket):
+            socket.handleAck(ack: pack.id, data: pack.data as AnyObject?)
+        case .binaryEvent where isCorrectNamespace(nsp:pack.nsp, socket: socket):
             socket.waitingData.append(pack)
-        case .binaryAck where isCorrectNamespace(pack.nsp, socket):
+        case .binaryAck where isCorrectNamespace(nsp:pack.nsp, socket: socket):
             socket.waitingData.append(pack)
         case .connect:
-            handleConnect(pack, socket: socket)
+            handleConnect(p: pack, socket: socket)
         case .disconnect:
-            socket.didDisconnect("Got Disconnect")
+            socket.didDisconnect(reason: "Got Disconnect")
         case .error:
-            socket.didError(pack.data as AnyObject)
+            socket.didError(reason: pack.data as AnyObject)
         default: break
-            Logger.log("Got invalid packet: %@", type: "SocketParser", args: pack.description as AnyObject)
+            Logger.log(message:"Got invalid packet: %@", type: "SocketParser", args: pack.description as AnyObject)
         }
     }
     
-    static func parseString(_ message: String) -> Either<String, SocketPacket> {
+    static func parseString(message: String) -> Either<String, SocketPacket> {
         var parser = SocketStringReader(message: message)
         
-        guard let type = SocketPacket.PacketType(str: parser.read(1)) else {
+        guard let type = SocketPacket.PacketType(str: parser.read(readLength: 1)) else {
             return .left("Invalid packet type")
         }
         
@@ -98,7 +98,7 @@ class SocketParser {
         }
         
         while parser.hasNext && type != .error {
-            if let int = Int(parser.read(1)) {
+            if let int = Int(parser.read(readLength: 1)) {
                 idString += String(int)
             } else {
                 parser.advanceIndexBy(-2)
@@ -109,10 +109,10 @@ class SocketParser {
         let d = message[message.index(parser.currentIndex, offsetBy: 1)..<message.endIndex]
         let noPlaceholders = d["(\\{\"_placeholder\":true,\"num\":(\\d*)\\})"] ~= "\"~~$2\""
         
-        switch parseData(noPlaceholders) {
+        switch parseData(data: noPlaceholders) {
         case .left(let err):
             // If first you don't succeed, try again
-            if case let .right(data) = parseData("\([noPlaceholders as AnyObject])") {
+            if case let .right(data) = parseData(data: "\([noPlaceholders as AnyObject])") {
                 return .right(SocketPacket(type: type, data: data, id: Int(idString) ?? -1,
                     nsp: namespace ?? "/", placeholders: placeholders))
             } else {
@@ -125,7 +125,7 @@ class SocketParser {
     }
     
     // Parses data for events
-    fileprivate static func parseData(_ data: String) -> Either<String, [AnyObject]> {
+    fileprivate static func parseData(data: String) -> Either<String, [AnyObject]> {
         let stringData = data.data(using: String.Encoding.utf8, allowLossyConversion: false)
         do {
             if let arr = try JSONSerialization.jsonObject(with: stringData!,
@@ -140,28 +140,28 @@ class SocketParser {
     }
     
     // Parses messages recieved
-    static func parseSocketMessage(_ message: String, socket: SocketIOClient) {
+    static func parseSocketMessage(message: String, socket: SocketIOClient) {
         guard !message.isEmpty else { return }
         
-        Logger.log("Parsing %@", type: "SocketParser", args: message as AnyObject)
+        Logger.log(message:"Parsing %@", type: "SocketParser", args: message as AnyObject)
         
-        switch parseString(message) {
+        switch parseString(message: message) {
         case .left(let err):
-            Logger.error("\(err): %@", type: "SocketParser", args: message as AnyObject)
+            Logger.error(message:"\(err): %@", type: "SocketParser", args: message as AnyObject)
         case .right(let pack):
-            Logger.log("Decoded packet as: %@", type: "SocketParser", args: pack.description as AnyObject)
-            handlePacket(pack, withSocket: socket)
+            Logger.log(message:"Decoded packet as: %@", type: "SocketParser", args: pack.description as AnyObject)
+            handlePacket(pack: pack, withSocket: socket)
         }
     }
     
-    static func parseBinaryData(_ data: Data, socket: SocketIOClient) {
+    static func parseBinaryData(data: Data, socket: SocketIOClient) {
         guard !socket.waitingData.isEmpty else {
-            Logger.error("Got data when not remaking packet", type: "SocketParser")
+            Logger.error(message: "Got data when not remaking packet", type: "SocketParser")
             return
         }
         
         // Should execute event?
-        guard socket.waitingData[socket.waitingData.count - 1].addData(data) else {
+        guard socket.waitingData[socket.waitingData.count - 1].addData(data: data) else {
             return
         }
         
@@ -169,10 +169,10 @@ class SocketParser {
         packet.fillInPlaceholders()
         
         if packet.type != .binaryAck {
-            socket.handleEvent(packet.event, data: packet.args ?? [],
+            socket.handleEvent(event: packet.event, data: packet.args ?? [],
                 isInternalMessage: false, wantsAck: packet.id)
         } else {
-            socket.handleAck(packet.id, data: packet.args as AnyObject?)
+            socket.handleAck(ack: packet.id, data: packet.args as AnyObject?)
         }
     }
 }

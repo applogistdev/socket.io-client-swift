@@ -1,6 +1,6 @@
 import Foundation
 
 @objc public protocol SocketIOClientDelegate {
-    func handleHttpRequest(_ request:URLRequest)
-    func handleHttpResponse(_ response:URLResponse)
+    func handleHttpRequest(request:URLRequest)
+    func handleHttpResponse(response:URLResponse)
 }
