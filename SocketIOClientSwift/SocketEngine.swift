@@ -169,13 +169,13 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
 
         if params != nil {
             for (key, value) in params! {
-                let keyEsc = key.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)
-                //let keyEsc = key.stringByAddingPercentEncodingWithAllowedCharacters(allowedCharacterSet)!
-                urlPolling += "&\(keyEsc)="
-                urlWebSocket += "&\(keyEsc)="
+                if let keyEsc = key.addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed) {
+                    urlPolling += "&\(keyEsc)="
+                    urlWebSocket += "&\(keyEsc)="
+                }
 
                 if value is String {
-                    let valueEsc = (value as! String).addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)
+                    let valueEsc = (value as! String).addingPercentEncoding(withAllowedCharacters: CharacterSet.urlQueryAllowed)!
                     urlPolling += "\(valueEsc)"
                     urlWebSocket += "\(valueEsc)"
                 } else {

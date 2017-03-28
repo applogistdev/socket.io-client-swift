@@ -539,8 +539,7 @@ open class WebSocket : NSObject, StreamDelegate {
                 len = UInt64(bufferLen-offset)
             }
             var data: Data!
-            if len < 0 {
-                len = 0
+            if len == 0 {
                 data = Data()
             } else {
                 data = Data(bytes: UnsafePointer<UInt8>(UnsafePointer<UInt8>((buffer+offset))), count: Int(len))

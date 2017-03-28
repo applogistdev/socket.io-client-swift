@@ -349,7 +349,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
                 return
             }
             
-            Logger.log(message:"Handling event: %@ with data: %@", type: logType, args: event as AnyObject, (data as AnyObject? ?? "" as AnyObject) )
+            Logger.log(message:"Handling event: %@ with data: %@", type: logType, args: event as AnyObject, (data as AnyObject?)! )
             
             if anyHandler != nil {
                 handleQueue.async {
