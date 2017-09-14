@@ -106,7 +106,7 @@ class SocketParser {
             }
         }
         
-        let d = message[message.index(parser.currentIndex, offsetBy: 1)..<message.endIndex]
+        let d = String(message[message.index(parser.currentIndex, offsetBy: 1)..<message.endIndex])
         let noPlaceholders = d["(\\{\"_placeholder\":true,\"num\":(\\d*)\\})"] ~= "\"~~$2\""
         
         switch parseData(data: noPlaceholders) {

@@ -76,7 +76,7 @@ internal class SwiftRegex: NSObject {
         }
         var groups = [String]()
         for groupno in 0...regex.numberOfCaptureGroups {
-            if let group = substring(range: match.rangeAt(groupno)) {
+            if let group = substring(range: match.range(at: groupno)) {
                 groups += [group]
             } else {
                 groups += ["_"] // avoids bridging problems
@@ -99,7 +99,7 @@ internal class SwiftRegex: NSObject {
                 let replacement = regex.replacementString(for: match,
                     in: target as String, offset: 0, template: newValue!)
                 let mut = NSMutableString(string: target)
-                mut.replaceCharacters(in: match.rangeAt(groupno), with: replacement)
+                mut.replaceCharacters(in: match.range(at: groupno), with: replacement)
                 
                 target = mut as String
             }
@@ -129,7 +129,7 @@ internal class SwiftRegex: NSObject {
     func dictionary(options: NSRegularExpression.MatchingOptions!) -> Dictionary<String,String> {
         var out = Dictionary<String,String>()
         for match in matchResults() {
-            out[substring(range: match.rangeAt(1))!] = substring(range: match.rangeAt(2))!
+            out[substring(range: match.range(at: 1))!] = substring(range: match.range(at: 2))!
         }
         return out
     }

@@ -86,11 +86,11 @@ open class WebSocket : NSObject, StreamDelegate {
     
     open weak var delegate: WebSocketDelegate?
     open weak var pongDelegate: WebSocketPongDelegate?
-    open var onConnect: ((Void) -> Void)?
+    open var onConnect: (() -> Void)?
     open var onDisconnect: ((Error?) -> Void)?
     open var onText: ((String) -> Void)?
     open var onData: ((Data) -> Void)?
-    open var onPong: ((Void) -> Void)?
+    open var onPong: (() -> Void)?
     open var headers = Dictionary<String,String>()
     open var voipEnabled = false
     open var selfSignedSSL = false
