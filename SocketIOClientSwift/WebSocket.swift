@@ -187,7 +187,7 @@ open class WebSocket : NSObject, StreamDelegate {
         }
         if let cfHTTPMessage = CFHTTPMessageCopySerializedMessage(urlRequest) {
             let serializedRequest = cfHTTPMessage.takeRetainedValue()
-            initStreamsWithData(data: serializedRequest as Data, port: Int(port!))
+            initStreamsWithData(data: serializedRequest as Data, port: Int(truncating: port!))
         }
     }
     //Add a header to the CFHTTPMessage by using the NSString bridges to CFString

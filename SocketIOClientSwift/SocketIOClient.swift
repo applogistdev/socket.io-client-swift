@@ -33,7 +33,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
 
     public fileprivate(set) var engine: SocketEngine?
     public fileprivate(set) var secure = false
-    public fileprivate(set) var status = SocketIOClientStatus.notConnected
+    @objc fileprivate(set) var status = SocketIOClientStatus.notConnected
     
     public var nsp = "/"
     public var opts: [String: AnyObject]?
@@ -60,7 +60,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     /**
     Create a new SocketIOClient. opts can be omitted
     */
-    public init(socketURL: String, opts: [String: AnyObject]? = nil) {
+    @objc public init(socketURL: String, opts: [String: AnyObject]? = nil) {
         if socketURL["https://"].matches().count != 0 {
             self.secure = true
         }
@@ -138,7 +138,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     Will turn off automatic reconnects.
     Pass true to fast if you're closing from a background task
     */
-    public func close() {
+    @objc public func close() {
         Logger.log(message: "Closing socket", type: logType)
         
         reconnects = false
@@ -148,7 +148,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     /**
     Connect to the server.
     */
-    public func connect() {
+    @objc public func connect() {
         connect(timeoutAfter: 0, withTimeoutHandler: nil)
     }
     
@@ -260,7 +260,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     /**
     Same as emit, but meant for Objective-C
     */
-    public func emit(event: String, withItems items: [AnyObject]) {
+    @objc public func emit(event: String, withItems items: [AnyObject]) {
         guard status == .connected else {
             return
         }
@@ -281,7 +281,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     /**
     Same as emitWithAck, but for Objective-C
     */
-    public func emitWithAck(event: String, withItems items: [AnyObject]) -> OnAckCallback {
+    @objc public func emitWithAck(event: String, withItems items: [AnyObject]) -> OnAckCallback {
         return createOnAck(items: [event as AnyObject] + items)
     }
     
@@ -402,7 +402,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     /**
     Removes handler(s)
     */
-    public func off(event: String) {
+    @objc public func off(event: String) {
         Logger.log(message:"Removing handler for event: %@", type: logType, args: event as AnyObject)
         
         handlers = ContiguousArray(handlers.filter { $0.event != event })
@@ -411,7 +411,7 @@ public final class SocketIOClient: NSObject, SocketEngineClient {
     /**
     Adds a handler for an event.
     */
-    public func on(event: String, callback: @escaping NormalCallback) {
+   @objc public func on(event: String, callback: @escaping NormalCallback) {
         Logger.log(message:"Adding handler for event: %@", type: logType, args: event as AnyObject)
         
         let handler = SocketEventHandler(event: event, callback: callback)
