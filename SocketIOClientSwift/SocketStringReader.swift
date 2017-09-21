@@ -54,9 +54,9 @@ struct SocketStringReader {
         guard let foundRange = substring.range(of: string) else {
             currentIndex = message.endIndex
             
-            return String(substring)
+            return String(describing: substring)
         }
-        
+            
         advanceIndexBy(message.characters.distance(from: message.startIndex, to: foundRange.lowerBound) + 1)
         let result = String(substring[..<substring.characters.index(substring.startIndex, offsetBy: foundRange.lowerBound.encodedOffset)])
         return result
