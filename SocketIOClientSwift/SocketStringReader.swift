@@ -57,8 +57,8 @@ struct SocketStringReader {
             return String(describing: substring)
         }
             
-        advanceIndexBy(message.characters.distance(from: message.startIndex, to: foundRange.lowerBound) + 1)
-        let result = String(substring[..<substring.characters.index(substring.startIndex, offsetBy: foundRange.lowerBound.encodedOffset)])
+        advanceIndexBy(message.distance(from: message.startIndex, to: foundRange.lowerBound) + 1)
+        let result = String(substring[..<substring.index(substring.startIndex, offsetBy: foundRange.lowerBound.encodedOffset)])
         return result
     }
     
