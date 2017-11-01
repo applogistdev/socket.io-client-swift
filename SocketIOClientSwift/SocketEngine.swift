@@ -326,7 +326,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
         var postStr = ""
 
         for packet in postWait {
-            let len = packet.characters.count
+            let len = packet.count
 
             postStr += "\(len):\(packet)"
         }
@@ -505,7 +505,7 @@ public final class SocketEngine: NSObject, WebSocketDelegate {
     }
 
     fileprivate func parsePollingMessage(str: String) {
-        guard str.characters.count != 1 else {
+        guard str.count != 1 else {
             return
         }
         
