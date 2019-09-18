@@ -104,7 +104,7 @@ public final class OnAckCallback : NSObject {
     /// - parameter after: The number of seconds before this emit times out if an ack hasn't been received.
     /// - parameter callback: The callback called when an ack is received, or when a timeout happens.
     ///                       To check for timeout, use `SocketAckStatus`'s `noAck` case.
-    public func timingOut(after seconds: Int, callback: @escaping AckCallback) {
+    @objc public func timingOut(after seconds: Int, callback: @escaping AckCallback) {
         guard let socket = self.socket, ackNumber != -1 else { return }
 
         socket.ackHandlers.addAck(ackNumber, callback: callback)
